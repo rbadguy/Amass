@@ -30,7 +30,7 @@ type Google struct {
 func NewGoogle(cfg *config.Config, bus *eb.EventBus, pool *resolvers.ResolverPool) *Google {
 	g := &Google{
 		quantity:   10,
-		limit:      100,
+		limit:      300,
 		SourceType: requests.SCRAPE,
 	}
 
@@ -56,7 +56,7 @@ func (g *Google) processRequests() {
 				for i := 0; i <= 3; i++ {
 					g.executeQuery(req.Domain, i)
 				}
-				
+
 			}
 		case <-g.AddrRequestChan():
 		case <-g.ASNRequestChan():
