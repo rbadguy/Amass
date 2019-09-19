@@ -28,14 +28,18 @@ import (
 	"github.com/OWASP/Amass/wordlist"
 	"github.com/go-ini/ini"
 	"github.com/google/uuid"
+	"github.com/gobuffalo/packr"
 )
 
 const (
-	outputDirectoryName = "amass"
+	outputDirectoryName         = "amass"
 	defaultConcurrentDNSQueries = 2500
-	defaultWordlistURL          = "https://raw.githubusercontent.com/OWASP/Amass/master/wordlists/namelist.txt"
-	defaultAltWordlistURL       = "https://raw.githubusercontent.com/OWASP/Amass/master/wordlists/alterations.txt"
 	publicDNSResolverURL        = "https://public-dns.info/nameservers.txt"
+)
+
+var (
+	// BoxOfDefaultFiles is the ./examples project directory embedded in the binary.
+	BoxOfDefaultFiles = packr.NewBox("../examples")
 )
 
 var defaultPublicResolvers = []string{
@@ -200,7 +204,7 @@ func (c *Config) CheckSettings() error {
 		if c.Passive {
 			return errors.New("Brute forcing cannot be performed without DNS resolution")
 		} else if len(c.Wordlist) == 0 {
-			c.Wordlist, err = getWordlistByURL(defaultWordlistURL)
+			c.Wordlist, err = getWordlistByBox("wordlists/namelist.txt")
 			if err != nil {
 				return err
 			}
@@ -211,7 +215,7 @@ func (c *Config) CheckSettings() error {
 	}
 	if c.Alterations {
 		if len(c.AltWordlist) == 0 {
-			c.AltWordlist, err = getWordlistByURL(defaultAltWordlistURL)
+			c.AltWordlist, err = getWordlistByBox("wordlists/alterations.txt")
 			if err != nil {
 				return err
 			}
@@ -545,14 +549,12 @@ func (c *Config) LoadSettings(path string) error {
 	if err := c.loadResolverSettings(cfg); err != nil {
 		return err
 	}
-
 	if err := c.loadNetworkSettings(cfg); err != nil {
 		return err
 	}
 	if err := c.loadAlterationSettings(cfg); err != nil {
 		return err
 	}
-
 	if err := c.loadBruteForceSettings(cfg); err != nil {
 		return err
 	}
@@ -623,10 +625,9 @@ func OutputDirectory(dir string) string {
 }
 
 func (c *Config) loadResolverSettings(cfg *ini.File) error {
-	// Check that the resolvers section exists in the config file
 	sec, err := cfg.GetSection("resolvers")
 	if err != nil {
-		return fmt.Errorf("The config file does not contain a resolvers section: %v", err)
+		return nil
 	}
 
 	c.Resolvers = stringset.Deduplicate(sec.Key("resolver").ValueWithShadows())
@@ -689,6 +690,14 @@ func getWordlistByURL(url string) ([]string, error) {
 		return nil, fmt.Errorf("Failed to obtain the wordlist at %s: %v", url, err)
 	}
 	return getWordList(strings.NewReader(page))
+}
+
+func getWordlistByBox(path string) ([]string, error) {
+	content, err := BoxOfDefaultFiles.FindString(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to obtain the embedded wordlist: %s: %v", path, err)
+	}
+	return getWordList(strings.NewReader(content))
 }
 
 func getWordList(reader io.Reader) ([]string, error) {
