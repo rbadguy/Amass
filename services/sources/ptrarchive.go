@@ -60,7 +60,15 @@ func (p *PTRArchive) executeQuery(domain string) {
 	}
 
 	p.SetActive()
-	url := p.getURL(domain)
+	url := "http://ptarchive.com"
+
+	_, err := http.RequestWebPage(url, nil, nil, "", "")
+
+	if err != nil {
+		p.Bus().Publish(requests.LogTopic, fmt.Sprintf("%s: %s: %v", p.String(), url, err))
+		return
+	}
+	url = p.getURL(domain)
 	page, err := http.RequestWebPage(url, nil, nil, "", "")
 	if err != nil {
 		p.Bus().Publish(requests.LogTopic, fmt.Sprintf("%s: %s: %v", p.String(), url, err))
@@ -83,7 +91,12 @@ func (p *PTRArchive) executeQuery(domain string) {
 }
 
 func (p *PTRArchive) getURL(domain string) string {
+<<<<<<< Updated upstream
 	format := "http://ptrarchive.com/tools/search3.htm?label=%s&date=ALL"
+=======
+
+	format := "http://ptrarchive.com/tools/search4.htm?label=%s&date=ALL"
+>>>>>>> Stashed changes
 
 	return fmt.Sprintf(format, domain)
 }
